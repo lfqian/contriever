@@ -63,11 +63,49 @@ def save(model, optimizer, scheduler, step, opt, dir_path, name):
         logger.info(f"Saving model to {epoch_path}")
 
 
+def get_second_latest_checkpoint(base_path):
+    """Get the second latest checkpoint step number"""
+    print('-------',base_path)
+    try:
+        steps = []
+        for d in os.listdir(base_path):
+            if d.startswith('step-'):
+                try:
+                    step_num = int(d.split('-')[-1])
+                    steps.append(step_num)
+                except ValueError:
+                    continue
+        
+        if len(steps) >= 2:
+            steps.sort()
+            second_latest_step = steps[-2]
+            print('____________', second_latest_step)
+            return os.path.join(base_path, f"step-{second_latest_step}")
+        else:
+            raise ValueError("Not enough checkpoints to find the second latest one.")
+    except Exception as e:
+        logger.error(f"Error finding second latest checkpoint: {e}")
+        return None
+
+
+
 def load(model_class, dir_path, opt, reset_params=False):
+
     epoch_path = os.path.realpath(dir_path)
-    checkpoint_path = os.path.join(epoch_path, "checkpoint.pth")
-    logger.info(f"loading checkpoint {checkpoint_path}")
-    checkpoint = torch.load(checkpoint_path, map_location="cpu")
+    print('*****',epoch_path)
+    epoch_path = epoch_path.replace('/qian/checkpoint/qian/checkpoint/', '/qian/checkpoint/')
+    try:
+        checkpoint_path = os.path.join(epoch_path, "checkpoint.pth").replace('/qian/checkpoint/qian/checkpoint/', '/qian/checkpoint/')
+        logger.info(f"loading checkpoint {checkpoint_path}")
+        checkpoint = torch.load(checkpoint_path, map_location="cpu")
+    except Exception:
+        base_checkpoint_path = epoch_path.split('step')[0]
+        checkpoint_path = get_second_latest_checkpoint(base_checkpoint_path)
+        checkpoint_path = os.path.join(checkpoint_path, "checkpoint.pth")
+        print("---------",checkpoint_path)
+        logger.info(f"loading checkpoint {checkpoint_path}")
+        checkpoint = torch.load(checkpoint_path, map_location="cpu") 
+
     opt_checkpoint = checkpoint["opt"]
     state_dict = checkpoint["model"]
 

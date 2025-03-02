@@ -28,7 +28,9 @@ def apply_tokenizer(path, tokenizer, normalize_text=False):
                 tokens = [torch.tensor(x, dtype=torch.int) for x in tokens]
                 alltokens.extend(tokens)
                 lines = []
-
+    # print('*'*1000,tokenizer.model_max_length)
+    # print(len(lines))
+    # print(path)
     tokens = tokenizer.batch_encode_plus(lines, add_special_tokens=False)['input_ids']
     tokens = [torch.tensor(x, dtype=torch.int) for x in tokens]
     alltokens.extend(tokens)
@@ -45,6 +47,7 @@ def tokenize_file(args):
         else:
             print(f"File {savepath} already exists, exiting")
             return
+        
     try:
         tokenizer = transformers.AutoTokenizer.from_pretrained(args.tokenizer, local_files_only=True)
     except:
